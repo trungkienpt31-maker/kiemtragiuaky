@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('dish.list.title')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 th:text="#{dish.list.title}">Dish List</h2>
+        <a class="btn btn-primary" th:href="@{/dishes/new}" th:text="#{dish.new}">New dish</a>
+    </div>
+
+    <div th:replace="~{fragments :: flash}"></div>
+    <div class="alert alert-warning" th:if="${priceError}" th:text="#{${priceError}}"></div>
+
+    <!-- Form lọc: GET để điều kiện nằm trên URL và được giữ nguyên sau khi gửi -->
+    <form method="get" th:action="@{/dishes}" class="card card-body mb-3">
+        <div class="row g-2">
+            <div class="col-md-4">
+                <label class="form-label" for="q" th:text="#{filter.keyword}">Search</label>
+                <input type="text" class="form-control" id="q" name="q" th:value="${q}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="categoryId" th:text="#{filter.category}">Category</label>
+                <select class="form-select" id="categoryId" name="categoryId">
+                    <option value="" th:text="#{filter.allCategories}">All</option>
+                    <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"
+                            th:selected="${c.id == categoryId}"></option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="available" th:text="#{filter.status}">Status</label>
+                <select class="form-select" id="available" name="available">
+                    <option value="" th:text="#{filter.all}" th:selected="${available == null or available == ''}">All</option>
+                    <option value="true" th:text="#{status.available}" th:selected="${available == 'true'}">Available</option>
+                    <option value="false" th:text="#{status.unavailable}" th:selected="${available == 'false'}">Unavailable</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="minPrice" th:text="#{filter.minPrice}">Min</label>
+                <input type="text" inputmode="decimal" class="form-control" id="minPrice" name="minPrice" th:value="${minPrice}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="maxPrice" th:text="#{filter.maxPrice}">Max</label>
+                <input type="text" inputmode="decimal" class="form-control" id="maxPrice" name="maxPrice" th:value="${maxPrice}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="sort" th:text="#{filter.sort}">Sort</label>
+                <select class="form-select" id="sort" name="sort">
+                    <option value="" th:text="#{sort.default}" th:selected="${sort == null or sort == ''}">Default</option>
+                    <option value="priceAsc" th:text="#{sort.priceAsc}" th:selected="${sort == 'priceAsc'}">Price asc</option>
+                    <option value="priceDesc" th:text="#{sort.priceDesc}" th:selected="${sort == 'priceDesc'}">Price desc</option>
+                    <option value="timeAsc" th:text="#{sort.timeAsc}" th:selected="${sort == 'timeAsc'}">Time asc</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary" th:text="#{common.search}">Search</button>
+                <a class="btn btn-outline-secondary" th:href="@{/dishes}" th:text="#{common.reset}">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="alert alert-info" th:if="${#lists.isEmpty(dishes)}" th:text="#{dish.list.empty}">No dishes found.</div>
+
+    <table class="table table-hover align-middle" th:unless="${#lists.isEmpty(dishes)}">
+        <thead class="table-light">
+        <tr>
+            <th th:text="#{image.thumbnail}">Thumbnail</th>
+            <th th:text="#{dish.name}">Name</th>
+            <th th:text="#{dish.category}">Category</th>
+            <th th:text="#{dish.price}">Price</th>
+            <th th:text="#{dish.preparationTime}">Time</th>
+            <th th:text="#{filter.status}">Status</th>
+            <th th:text="#{common.actions}">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="d : ${dishes}" th:classappend="${!d.isAvailable} ? 'table-secondary'">
+            <td>
+                <img class="thumb" th:if="${d.thumbnail != null}" th:src="${d.thumbnail.imageUrl}" alt="">
+                <span class="text-muted small" th:if="${d.thumbnail == null}" th:text="#{dish.noImage}">No image</span>
+            </td>
+            <td th:text="${d.name}">Name</td>
+            <td th:text="${d.category.name}">Category</td>
+            <td th:text="${#numbers.formatDecimal(d.price, 1, 'COMMA', 2, 'POINT')}">0</td>
+            <td>
+                <span th:text="${d.preparationTime} + ' ' + #{common.minutes}">10 min</span>
+                <span class="badge" th:classappend="${d.quick} ? 'bg-success' : 'bg-warning text-dark'"
+                      th:text="${d.quick} ? #{prep.quick} : #{prep.regular}">Quick</span>
+            </td>
+            <td>
+                <span class="badge" th:classappend="${d.isAvailable} ? 'bg-primary' : 'bg-secondary'"
+                      th:text="${d.isAvailable} ? #{status.available} : #{status.unavailable}">Available</span>
+            </td>
+            <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/dishes/{id}(id=${d.id})}" th:text="#{common.details}">Details</a>
+                <a class="btn btn-sm btn-outline-secondary" th:href="@{/dishes/{id}/edit(id=${d.id})}" th:text="#{common.edit}">Edit</a>
+                <form class="d-inline" method="post" th:action="@{/dishes/{id}/delete(id=${d.id})}"
+                      th:attr="data-msg=#{common.confirmDelete}" onsubmit="return confirm(this.dataset.msg)">
+                    <button class="btn btn-sm btn-outline-danger" type="submit" th:text="#{common.delete}">Delete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

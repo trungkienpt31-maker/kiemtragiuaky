@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('error.title')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div class="container">
+    <div class="alert alert-danger">
+        <h4 class="alert-heading" th:text="#{error.title}">Error</h4>
+        <p class="mb-0" th:text="${messageKey != null} ? #{${messageKey}} : #{error.generic}">Something went wrong.</p>
+    </div>
+    <a class="btn btn-secondary" th:href="@{/dishes}" th:text="#{error.home}">Go to dish list</a>
+</div>
+</body>
+</html>
